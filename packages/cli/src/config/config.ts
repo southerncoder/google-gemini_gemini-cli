@@ -53,7 +53,7 @@ interface CliArgs {
   telemetryTarget: string | undefined;
   telemetryOtlpEndpoint: string | undefined;
   telemetryLogPrompts: boolean | undefined;
-  'disable-extensions': string | undefined;
+  extensions: string | undefined;
   'list-extensions': boolean | undefined;
 }
 
@@ -130,10 +130,11 @@ async function parseArguments(): Promise<CliArgs> {
       description: 'Enables checkpointing of file edits',
       default: false,
     })
-    .option('disable-extensions', {
+    .option('extensions', {
       alias: 'e',
       type: 'string',
-      description: 'Comma-separated list of extensions to disable.',
+      description:
+        'Comma-separated list of extensions to use. If not provided, all extensions are used.',
     })
     .option('list-extensions', {
       alias: 'l',
@@ -183,12 +184,15 @@ export async function loadCliConfig(
   const argv = await parseArguments();
   const debugMode = argv.debug || false;
 
-  const disabledExtensions =
-    argv['disable-extensions']?.split(',').map((e) => e.trim().toLowerCase()) ||
-    [];
-  const activeExtensions = extensions.filter(
-    (e) => !disabledExtensions.includes(e.config.name.toLowerCase()),
-  );
+  const enabledExtensions =
+    argv.extensions?.split(',').map((e) => e.trim().toLowerCase()) || [];
+
+  const activeExtensions =
+    enabledExtensions.length > 0
+      ? extensions.filter((e) =>
+          enabledExtensions.includes(e.config.name.toLowerCase()),
+        )
+      : extensions;
 
   // Set the context filename in the server's memoryTool module BEFORE loading memory
   // TODO(b/343434939): This is a bit of a hack. The contextFileName should ideally be passed
