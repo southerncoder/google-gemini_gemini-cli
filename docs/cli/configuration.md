@@ -331,7 +331,7 @@ Here's a conceptual example of what a context file at the root of a TypeScript p
 - When generating new TypeScript code, please follow the existing coding style.
 - Ensure all new functions and classes have JSDoc comments.
 - Prefer functional programming paradigms where appropriate.
-- All code should be compatible with TypeScript 5.0 and Node.js 18+.
+- All code should be compatible with TypeScript 5.0 and Node.js 20+.
 
 ## Coding Style:
 
@@ -363,7 +363,7 @@ This example demonstrates how you can provide general project context, specific 
       - Scope: Provides context relevant to the entire project or a significant portion of it.
   3.  **Sub-directory Context Files (Contextual/Local):**
       - Location: The CLI also scans for the configured context file in subdirectories _below_ the current working directory (respecting common ignore patterns like `node_modules`, `.git`, etc.).
-      - Scope: Allows for highly specific instructions relevant to a particular component, module, or sub-section of your project.
+      - Scope: Allows for highly specific instructions relevant to a particular component, module, or subsection of your project.
 - **Concatenation & UI Indication:** The contents of all found context files are concatenated (with separators indicating their origin and path) and provided as part of the system prompt to the Gemini model. The CLI footer displays the count of loaded context files, giving you a quick visual cue about the active instructional context.
 - **Commands for Memory Management:**
   - Use `/memory refresh` to force a re-scan and reload of all context files from all configured locations. This updates the AI's instructional context.
