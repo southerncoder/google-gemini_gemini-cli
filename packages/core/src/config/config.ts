@@ -88,7 +88,7 @@ export class MCPServerConfig {
     readonly description?: string,
     readonly includeTools?: string[],
     readonly excludeTools?: string[],
-  ) {}
+  ) { }
 }
 
 export interface SandboxConfig {
@@ -508,7 +508,7 @@ export class Config {
 
     registerCoreTool(LSTool, targetDir, this);
     registerCoreTool(ReadFileTool, targetDir, this);
-  registerCoreTool(CleanDocstringTool, targetDir, config);
+    registerCoreTool(CleanDocstringTool, targetDir, this);
     registerCoreTool(GrepTool, targetDir);
     registerCoreTool(GlobTool, targetDir, this);
     registerCoreTool(EditTool, this);
