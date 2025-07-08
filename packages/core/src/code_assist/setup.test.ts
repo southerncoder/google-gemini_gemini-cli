@@ -61,7 +61,10 @@ describe('setupUser', () => {
       currentTier: mockPaidTier,
     });
     const projectId = await setupUser({} as OAuth2Client);
-    expect(CodeAssistServer).toHaveBeenCalledWith(expect.any(Object), undefined);
+    expect(CodeAssistServer).toHaveBeenCalledWith(
+      expect.any(Object),
+      undefined,
+    );
     expect(projectId).toBe('server-project');
   });
 
@@ -69,11 +72,10 @@ describe('setupUser', () => {
     delete process.env.GOOGLE_CLOUD_PROJECT;
     // And the server itself requires a project ID internally
     vi.mocked(CodeAssistServer).mockImplementation(() => {
-      const error = new Error('Project ID is required');
-      throw new ProjectIdRequiredError(error.message);
+      throw new ProjectIdRequiredError();
     });
 
-    await expect(setupUser({} as OAuth2Clien)).rejects.toThrow(
+    await expect(setupUser({} as OAuth2Client)).rejects.toThrow(
       ProjectIdRequiredError,
     );
   });
