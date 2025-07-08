@@ -37,10 +37,12 @@ const logger = {
 interface CliArgs {
   model: string | undefined;
   sandbox: boolean | string | undefined;
-  'sandbox-image': string | undefined;
+  sandboxImage: string | undefined;
   debug: boolean | undefined;
   prompt: string | undefined;
+  allFiles: boolean | undefined;
   all_files: boolean | undefined;
+  showMemoryUsage: boolean | undefined;
   show_memory_usage: boolean | undefined;
   yolo: boolean | undefined;
   telemetry: boolean | undefined;
@@ -48,7 +50,7 @@ interface CliArgs {
   telemetryTarget: string | undefined;
   telemetryOtlpEndpoint: string | undefined;
   telemetryLogPrompts: boolean | undefined;
-  'allowed-mcp-server-names': string | undefined;
+  allowedMcpServerNames: string | undefined;
 }
 
 async function parseArguments(): Promise<CliArgs> {
@@ -84,10 +86,21 @@ async function parseArguments(): Promise<CliArgs> {
       description: 'Run in debug mode?',
       default: false,
     })
-    .option('all_files', {
-      alias: 'a',
+    .option('all-files', {
+      alias: ['a'],
       type: 'boolean',
       description: 'Include ALL files in context?',
+      default: false,
+    })
+    .option('all_files', {
+      type: 'boolean',
+      description: 'Include ALL files in context?',
+      default: false,
+    })
+    .deprecateOption('all_files', 'Use --all-files instead.')
+    .option('show-memory-usage', {
+      type: 'boolean',
+      description: 'Show memory usage in status bar',
       default: false,
     })
     .option('show_memory_usage', {
@@ -95,6 +108,7 @@ async function parseArguments(): Promise<CliArgs> {
       description: 'Show memory usage in status bar',
       default: false,
     })
+    .deprecateOption('show_memory_usage', 'Use --show-memory-usage instead.')
     .option('yolo', {
       alias: 'y',
       type: 'boolean',
@@ -199,9 +213,9 @@ export async function loadCliConfig(
   let mcpServers = mergeMcpServers(settings, extensions);
   const excludeTools = mergeExcludeTools(settings, extensions);
 
-  if (argv['allowed-mcp-server-names']) {
+  if (argv.allowedMcpServerNames) {
     const allowedNames = new Set(
-      argv['allowed-mcp-server-names'].split(',').filter(Boolean),
+      argv.allowedMcpServerNames.split(',').filter(Boolean),
     );
     if (allowedNames.size > 0) {
       mcpServers = Object.fromEntries(
@@ -221,7 +235,7 @@ export async function loadCliConfig(
     targetDir: process.cwd(),
     debugMode,
     question: argv.prompt || '',
-    fullContext: argv.all_files || false,
+    fullContext: argv.allFiles || argv.all_files || false,
     coreTools: settings.coreTools || undefined,
     excludeTools,
     toolDiscoveryCommand: settings.toolDiscoveryCommand,
@@ -232,7 +246,10 @@ export async function loadCliConfig(
     geminiMdFileCount: fileCount,
     approvalMode: argv.yolo || false ? ApprovalMode.YOLO : ApprovalMode.DEFAULT,
     showMemoryUsage:
-      argv.show_memory_usage || settings.showMemoryUsage || false,
+      argv.showMemoryUsage ||
+      argv.show_memory_usage ||
+      settings.showMemoryUsage ||
+      false,
     accessibility: settings.accessibility,
     telemetry: {
       enabled: argv.telemetry ?? settings.telemetry?.enabled,
