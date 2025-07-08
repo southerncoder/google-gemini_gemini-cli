@@ -292,7 +292,7 @@ Arguments passed directly when running the CLI can override other configurations
   - Enables sandbox mode for this session.
 - **`--sandbox-image`**:
   - Sets the sandbox image URI.
-- **`--debug_mode`** (**`-d`**):
+- **`--debug`** (**`-d`**):
   - Enables debug mode for this session, providing more verbose output.
 - **`--all-files`** (**`-a`**):
   - If set, recursively includes all files within the current directory as context for the prompt.
