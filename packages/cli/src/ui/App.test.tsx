@@ -186,6 +186,10 @@ describe('App UI', () => {
   const createMockSettings = (
     settings: Partial<Settings> = {},
   ): LoadedSettings => {
+    const systemSettingsFile: SettingsFile = {
+      path: '/system/settings.json',
+      settings: {},
+    };
     const userSettingsFile: SettingsFile = {
       path: '/user/settings.json',
       settings: {},
@@ -196,7 +200,12 @@ describe('App UI', () => {
         ...settings,
       },
     };
-    return new LoadedSettings(userSettingsFile, workspaceSettingsFile, []);
+    return new LoadedSettings(
+      systemSettingsFile,
+      userSettingsFile,
+      workspaceSettingsFile,
+      [],
+    );
   };
 
   beforeEach(() => {

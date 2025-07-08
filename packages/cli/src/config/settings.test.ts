@@ -13,6 +13,7 @@ vi.mock('os', async (importOriginal) => {
   return {
     ...actualOs,
     homedir: vi.fn(() => '/mock/home/user'),
+    platform: vi.fn(() => 'linux'),
   };
 });
 
@@ -45,6 +46,7 @@ import stripJsonComments from 'strip-json-comments'; // Will be mocked separatel
 import {
   loadSettings,
   USER_SETTINGS_PATH, // This IS the mocked path.
+  SYSTEM_SETTINGS_PATH,
   SETTINGS_DIRECTORY_NAME, // This is from the original module, but used by the mock.
   SettingScope,
 } from './settings.js';
@@ -90,10 +92,39 @@ describe('Settings Loading and Merging', () => {
   describe('loadSettings', () => {
     it('should load empty settings if no files exist', () => {
       const settings = loadSettings(MOCK_WORKSPACE_DIR);
+      expect(settings.system.settings).toEqual({});
       expect(settings.user.settings).toEqual({});
       expect(settings.workspace.settings).toEqual({});
       expect(settings.merged).toEqual({});
       expect(settings.errors.length).toBe(0);
+    });
+
+    it('should load system settings if only system file exists', () => {
+      (mockFsExistsSync as Mock).mockImplementation(
+        (p: fs.PathLike) => p === SYSTEM_SETTINGS_PATH,
+      );
+      const systemSettingsContent = {
+        theme: 'system-default',
+        sandbox: false,
+      };
+      (fs.readFileSync as Mock).mockImplementation(
+        (p: fs.PathOrFileDescriptor) => {
+          if (p === SYSTEM_SETTINGS_PATH)
+            return JSON.stringify(systemSettingsContent);
+          return '{}';
+        },
+      );
+
+      const settings = loadSettings(MOCK_WORKSPACE_DIR);
+
+      expect(fs.readFileSync).toHaveBeenCalledWith(
+        SYSTEM_SETTINGS_PATH,
+        'utf-8',
+      );
+      expect(settings.system.settings).toEqual(systemSettingsContent);
+      expect(settings.user.settings).toEqual({});
+      expect(settings.workspace.settings).toEqual({});
+      expect(settings.merged).toEqual(systemSettingsContent);
     });
 
     it('should load user settings if only user file exists', () => {
@@ -184,6 +215,50 @@ describe('Settings Loading and Merging', () => {
         sandbox: true,
         coreTools: ['tool1'],
         contextFileName: 'WORKSPACE_CONTEXT.md',
+      });
+    });
+
+    it('should merge system, user and workspace settings, with system taking precedence over user, and user over workspace', () => {
+      (mockFsExistsSync as Mock).mockReturnValue(true);
+      const systemSettingsContent = {
+        theme: 'system-theme',
+        sandbox: false,
+        telemetry: { enabled: false },
+      };
+      const userSettingsContent = {
+        theme: 'dark',
+        sandbox: true,
+        contextFileName: 'USER_CONTEXT.md',
+      };
+      const workspaceSettingsContent = {
+        sandbox: false,
+        coreTools: ['tool1'],
+        contextFileName: 'WORKSPACE_CONTEXT.md',
+      };
+
+      (fs.readFileSync as Mock).mockImplementation(
+        (p: fs.PathOrFileDescriptor) => {
+          if (p === SYSTEM_SETTINGS_PATH)
+            return JSON.stringify(systemSettingsContent);
+          if (p === USER_SETTINGS_PATH)
+            return JSON.stringify(userSettingsContent);
+          if (p === MOCK_WORKSPACE_SETTINGS_PATH)
+            return JSON.stringify(workspaceSettingsContent);
+          return '';
+        },
+      );
+
+      const settings = loadSettings(MOCK_WORKSPACE_DIR);
+
+      expect(settings.system.settings).toEqual(systemSettingsContent);
+      expect(settings.user.settings).toEqual(userSettingsContent);
+      expect(settings.workspace.settings).toEqual(workspaceSettingsContent);
+      expect(settings.merged).toEqual({
+        theme: 'system-theme',
+        sandbox: false,
+        telemetry: { enabled: false },
+        coreTools: ['tool1'],
+        contextFileName: 'USER_CONTEXT.md',
       });
     });
 
@@ -409,7 +484,7 @@ describe('Settings Loading and Merging', () => {
       delete process.env.WORKSPACE_ENDPOINT;
     });
 
-    it('should prioritize workspace env variables over user env variables if keys clash after resolution', () => {
+    it('should prioritize user env variables over workspace env variables if keys clash after resolution', () => {
       const userSettingsContent = { configValue: '$SHARED_VAR' };
       const workspaceSettingsContent = { configValue: '$SHARED_VAR' };
 
@@ -624,10 +699,10 @@ describe('Settings Loading and Merging', () => {
         'utf-8',
       );
 
-      // Workspace theme overrides user theme
-      loadedSettings.setValue(SettingScope.Workspace, 'theme', 'ocean');
+      // System theme overrides user and workspace themes
+      loadedSettings.setValue(SettingScope.System, 'theme', 'ocean');
 
-      expect(loadedSettings.workspace.settings.theme).toBe('ocean');
+      expect(loadedSettings.system.settings.theme).toBe('ocean');
       expect(loadedSettings.merged.theme).toBe('ocean');
     });
   });
